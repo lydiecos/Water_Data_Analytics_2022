@@ -72,7 +72,7 @@ names(EnoDischarge)[4:5] <- c("Discharge_cfs", "Approval_Code")
 ```{r}  
 EnoDischarge <- EnoDischarge %>%
   mutate(Discharge_cms = Discharge_cfs*0.028316847) %>%
-  mutate(Dis_30d_cms = rollmean(Discharge_cms,30, fill = NA))
+  mutate(Dis_30d_cms = rollmean(Discharge_cms, 30, fill = NA))
 
 EnoPlot2 <- 
   ggplot(EnoDischarge, aes(x = Date)) +

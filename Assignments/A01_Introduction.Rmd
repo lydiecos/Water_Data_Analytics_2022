@@ -1,6 +1,6 @@
 ---
 title: "Assignment 1: Introduction"
-author: "Student Name"
+author: "Lydie Costes"
 output: pdf_document
 geometry: margin=2.54cm
 editor_options: 
@@ -26,20 +26,36 @@ Target due date: 2022-01-18
 
 1. Post the link to your forked GitHub repository below. Your repo should include one or more commits and an edited README file.  
 
->  Link:
+>  Link: https://github.com/lydiecos/Water_Data_Analytics_2022
 
 ## Data Visualization Exercises
 
 2. Set up your work session. Check your working directory, load packages `tidyverse`,  `dataRetrieval`, and `zoo`. Set your ggplot theme as theme_classic (you may need to look up how to set your theme).
 
 ```{r, message = FALSE}
+# Check working directory
+getwd()
 
+# Load packages
+library(tidyverse)
+library(dataRetrieval)
+library(zoo)
+
+# Set ggplot theme
+theme_set(theme_classic())
 ```
 
 3. Upload discharge data for the Eno River at site 02096500 for the same dates as we studied in class (2012-01-01 through 2021-12-31). Obtain data for discharge. Rename the columns with informative titles, as we did in class. 
 
 ```{r}
+# Import data
+EnoDischarge <- readNWISdv(siteNumbers = "02096500",
+                     parameterCd = "00060", # discharge (ft3/s)
+                     startDate = "2012-01-01",
+                     endDate = "2021-12-31")
 
+# Rename columns
+names(EnoDischarge)[4:5] <- c("Discharge_cfs", "Approval_Code")
 ```
 
 
@@ -54,19 +70,32 @@ Target due date: 2022-01-18
 * Add a legend. (hint: Google "add legend two geom layers ggplot")
 
 ```{r}  
+EnoDischarge <- EnoDischarge %>%
+  mutate(Discharge_cms = Discharge_cfs*0.028316847) %>%
+  mutate(Dis_30d_cms = rollmean(Discharge_cms,30, fill = NA))
 
+EnoPlot2 <- 
+  ggplot(EnoDischarge, aes(x = Date)) +
+         geom_line(aes(y = Discharge_cms, color = 'Discharge')) +
+         geom_line(aes(y = Dis_30d_cms, color = '30-Day Rolling Average')) +
+         xlab("Year") +
+         theme_classic() +
+         scale_y_continuous(trans='log10') +
+         labs(y = "Logarithm of Discharge (cms)") +
+         scale_color_manual(name = "", values = c('Discharge' = 'darkslategray3', '30-Day Rolling Average' = 'lightsteelblue4'))
+EnoPlot2
 
 ```
 
 5. In what ways was the second plot a more effective visualization than the first? 
 
-> ANSWER: 
+> ANSWER: It shows lows as well as highs, and the rolling average allows for more easily visualizing broad patterns over time.
 
 6. What portions of the coding were challenging for you?
 
-> ANSWER: 
+> ANSWER: I always get confused by the  aesthetic of the plot, what should go in that parentheses versus not, and I find the legend building process unnecessarily complicated! I've done these steps before but appreciate the practice.
 
 7. Interpret the graph you made. What are the things you notice about within- and across-year variability, as well as the differences between daily values and 30-day rolling mean?
 
-> ANSWER: 
+> ANSWER: Discharge varies greatly within years, perhaps more so than across years. Looking at how the 30-day average tracks compared with daily numbers, it appears that there are more sustained droughts, whereas extreme high discharges tend to be more short-lived. This makes sense, as droughts are more likely to last than extreme precipitation events. There may be a slight pattern of increasing discharge over time, but further analyses (and more data) would be needed to draw any definitive conclusions.
 

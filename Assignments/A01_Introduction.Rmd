@@ -76,13 +76,13 @@ EnoDischarge <- EnoDischarge %>%
 
 EnoPlot2 <- 
   ggplot(EnoDischarge, aes(x = Date)) +
-         geom_line(aes(y = Discharge_cms, color = 'Discharge')) +
+         geom_line(aes(y = Discharge_cms, color = 'Daily Discharge')) +
          geom_line(aes(y = Dis_30d_cms, color = '30-Day Rolling Average')) +
          xlab("Year") +
          theme_classic() +
          scale_y_continuous(trans='log10') +
          labs(y = "Logarithm of Discharge (cms)") +
-         scale_color_manual(name = "", values = c('Discharge' = 'darkslategray3', '30-Day Rolling Average' = 'lightsteelblue4'))
+         scale_color_manual(name = "", values = c('Daily Discharge' = 'darkslategray3', '30-Day Rolling Average' = 'lightsteelblue4'))
 EnoPlot2
 
 ```

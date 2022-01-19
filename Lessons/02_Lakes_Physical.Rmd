@@ -16,6 +16,7 @@ editor_options:
 ## Opening Discussion
 
 What are the physical properties of lakes?
+Temperature, Depth, Light Penetration
 
 ## Session Set Up
 ```{r, message = FALSE}
@@ -115,8 +116,14 @@ ggplot(Pauldata, aes(x = temperature_C, y = depth, color = daynum)) +
 ```
 
 How do temperatures at the surface compare to temperatures at the mid-depths and at the bottom?
-<add notes here>
+epilimnion: upper water column
+hypolimnion: lower water column
 
+Big temp difference between epilimnion and hypolimnion in the summer, meaning that the water does not mix as much because of variation in density. As upper cools down and becomes denser, water begins to mix and becomes very stable. 
+
+Highest water density at 4 degrees Celsius (stabilizes)  - in cold climates, water temp in lakes tends to vary just from 0 degrees at the surface to 4 degrees in the depths (in above graph, there is only one year where temps were taken in winter - temps look very consistent that year).
+
+Irradiance in spring/summer warms up the surface, causing stratification.
 
 ### Graphing seasonal water profiles
 

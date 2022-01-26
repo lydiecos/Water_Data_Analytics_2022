@@ -119,11 +119,7 @@ How do temperatures at the surface compare to temperatures at the mid-depths and
 epilimnion: upper water column
 hypolimnion: lower water column
 
-Big temp difference between epilimnion and hypolimnion in the summer, meaning that the water does not mix as much because of variation in density. As upper cools down and becomes denser, water begins to mix and becomes very stable. 
-
-Highest water density at 4 degrees Celsius (stabilizes)  - in cold climates, water temp in lakes tends to vary just from 0 degrees at the surface to 4 degrees in the depths (in above graph, there is only one year where temps were taken in winter - temps look very consistent that year).
-
-Irradiance in spring/summer warms up the surface, causing stratification.
+Big temp difference between epilimnion and hypolimnion in the summer, meaning that the water does not mix as much because of variation in density. As upper cools down and becomes denser, water begins to mix and becomes very stable.
 
 ### Graphing seasonal water profiles
 
@@ -143,13 +139,22 @@ ggplot(subset(Pauldata, year4 == 1993),
   labs(x = expression("Temperature "(degree*C)), y = "Depth (m)", color = "DOY") 
 
 # Now, make a plot as above but with dissolved oxygen saturation instead of temperature.
-
+ggplot(subset(Pauldata, year4 == 1993), 
+       aes(x = dissolvedOxygen, y = depth, color = daynum)) +
+  geom_point(alpha = 0.5) +
+  scale_y_reverse() +
+  scale_color_viridis_c() +
+  labs(x = expression("DO (mg/L)"), y = "Depth (m)", color = "DOY") 
 
 ```
 
 Why does mixing occur in the spring and fall? What are the mechanisms that make this possible?
-<add notes here>
 
+Highest water density at 4 degrees Celsius (stabilizes)  - in cold climates, water temp in lakes tends to vary just from 0 degrees at the surface to 4 degrees in the depths (in above graph, there is only one year where temps were taken in winter - temps look very consistent that year). Irradiance in spring/summer warms up the surface, causing stratification.
+
+Wave motion incorporates oxygen into the epilimnion, raising DO levels. Plants and algae photosynthesize in the upper water column, increasing DO. Phytoplankton tend to hang out at a level where they can access sunlight from above and decaying nutrients from below. Tend to see higher concentrations of byproducts of anaerobic respiration - methane, CO2, etc - in the hypolimnion.
+
+Interesting case of Lake Nyos - amictic lake with a huge amount of trapped CO2 that was all released, possibly because of a small volcanic eruption in the lake bed. CO2 cloud settled on the area, killing hundreds of people and animals. 
 
 
 ### Calculating thermoclines
@@ -172,7 +177,10 @@ ggplot(Pauldata_thermo, aes(x = daynum, y = thermocline)) +
 ```
 
 How does thermocline depth change over the course of the year? When do we observe the most variability in thermocline depth?
-<add notes here>
+
+Generally, the thermocline tends to deepen over the course of the season.
+
+First day of stratification often used in limnology as the start of the season because it kicks off many processes.
 
 
 ### Climate change
@@ -214,3 +222,12 @@ ggplot(subset(Pauldata, depth == 1),
 ## Closing Discussion
 
 What are the main concepts you learned about the physical properties of lakes today? What was the evidence for these concepts in the dataset?
+
+dimictic: mixes twice per year (fall and spring)
+monomictic: mixes once per year (fall-spring, only stratify in summer)
+ - doesn't get cold enough to form iceover and stratify
+polymictic: mixes multiple times per year
+ - not strong seasonal stratification, but in response to weather events
+ - less mass/shallower -> less of a resistance to thermal mixing 
+amictic: does not mix
+ - deep, sheltered from  weather events

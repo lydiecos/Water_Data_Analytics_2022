@@ -188,7 +188,7 @@ NehalemPlot
 
 CombinedPlot <- 
   plot_grid(EnoPlot, VerdePlot, BitterrootPlot, SaukPlot, NehalemPlot, 
-            ncol = 1)
+            ncol = 1, rel_heights = c(1, 1, 1, 1, 1.2), align = "hv")
 CombinedPlot
 
 # add relative heights and align axes
@@ -196,7 +196,7 @@ CombinedPlot
 
 How does the magnitude of discharge compare for these rivers?
 
->
+> They vary in range from ~4,000 to ~15,000.
 
 Which of these rivers have a seasonal cycle of discharge? How might you explain the presence and timing of seasonal cycles based on climatic conditions?
 

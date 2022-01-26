@@ -1,6 +1,6 @@
 ---
 title: "Assignment 2: Physical Properties of Lakes"
-author: "Student Name"
+author: "Lydie Costes"
 output: pdf_document
 geometry: margin=2.54cm
 editor_options: 
@@ -31,7 +31,23 @@ Target due date: 2022-01-25
 5. Set your ggplot theme (can be theme_classic or something else)
 
 ```{r}
+# Get working directory
+getwd()
 
+# Load packages
+library(tidyverse)
+library(lubridate)
+library(rLakeAnalyzer)
+
+# Load dataset
+plake <- read.csv("./Data/Raw/NTL-LTER_Lake_ChemistryPhysics_Raw.csv")
+
+# Set date column as date format
+plake$sampledate <- as.Date(plake$sampledate, format="%m/%d/%y")
+
+plake %>%
+  mutate(Month = format(sampledate, "%m")) %>%
+  
 
 ```
 

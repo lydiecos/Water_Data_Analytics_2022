@@ -31,44 +31,92 @@ Target due date: 2022-01-25
 5. Set your ggplot theme (can be theme_classic or something else)
 
 ```{r}
-# Get working directory
+# 1. Get working directory
 getwd()
 
-# Load packages
+# 2. Load packages
 library(tidyverse)
 library(lubridate)
 library(rLakeAnalyzer)
 
-# Load dataset
-plake <- read.csv("./Data/Raw/NTL-LTER_Lake_ChemistryPhysics_Raw.csv")
-
+# 3. Load dataset
+plake <- read.csv("../Data/Raw/NTL-LTER_Lake_ChemistryPhysics_Raw.csv")
 # Set date column as date format
 plake$sampledate <- as.Date(plake$sampledate, format="%m/%d/%y")
 
-plake %>%
+# 4. Add month column and omit temperature NAs; save changes
+plake <- plake %>%
   mutate(Month = format(sampledate, "%m")) %>%
-  
+  drop_na(temperature_C)
 
+# 5. Set theme to classic
+theme_set(theme_classic())
 ```
 
 ## Creating and analyzing lake temperature profiles
 
 5. For the year 1993, plot temperature and dissolved oxygen profiles for all six lakes in the dataset (as two separate ggplots). Use the `facet_wrap` function to plot each lake as a separate panel in the plot. Plot day of year as your color aesthetic and use a reverse y scale to represent depth. 
 
-What seasonal trends do you observe, and do these manifest differently in each lake?
 
 ```{r}
+# 5. Plot temperature for 1993 by lake
+ggplot(subset(plake, year4 == 1993), 
+       aes(x = temperature_C, y = depth, color = daynum)) +
+  geom_point(alpha = 0.6) +
+  scale_y_reverse() +
+  scale_color_viridis_c() +
+  labs(x = expression("Temperature "(degree*C)), y = "Depth (m)", color = "DOY") +
+  facet_wrap(~lakename)
 
+# Plot dissolved oxygen for 1993 by lake
+ggplot(subset(plake, year4 == 1993), 
+       aes(x = dissolvedOxygen, y = depth, color = daynum)) +
+  geom_point(alpha = 0.6) +
+  scale_y_reverse() +
+  scale_color_viridis_c() +
+  labs(x = expression("DO (mg/L)"), y = "Depth (m)", color = "DOY") +
+  facet_wrap(~lakename)
 
 ```
+
+What seasonal trends do you observe, and do these manifest differently in each lake?
+
+Temperature shows the widest range in summer, which makes sense because that is a typical time for stratification. Unsurprisingly, temperatures are warmest in the summer. The range of temperatures is much broader in the summer/early fall. The limited winter data suggests that the epilimnion and hypolimnion have mixed and that the water temperature is stable throughout the water column. All the lakes show similar temperature patterns, except that Central Long Lake is clearly more shallow (and Paul Lake too, to some extent) and therefore does not show the same range of lower temperatures. 
+
+The dissolved oxygen patterns are more diverse across the different lakes. In general, dissolved oxygen levels are highest in the spring and decline over the year, increasing again in the winter. All of the lakes have a cluster of data at around 10 mg/L - for some lakes like East Long Lake, this is highest recorded dissolved oxygen level in the spring, whereas lakes like Peter and West Long have a chunk of higher oxygen levels at a depth of 2.5-5m in the spring. Probably these increased levels correspond to the presence of algae. All of the lakes show a drop off of oxygen levels moving into deeper waters, but that dropoff occurs at different levels - for example, East Long Lake has a drop in oxygen at about 2.5 m, whereas the dropoff in Paul Lake and Peter Lake is below 5 m. Perhaps physical properties like turbidity and light penetration could influence the depth at which dissolved oxygen levels drop precipitously (with algae presence as a mediator).
+
+
 
 6. Create a new dataset that calculates thermocline depths for all lakes on all dates (hint: you will need group by lake, year, month, DOY, and sample date).
 7. Plot thermocline depth by day of year for your newly made dataset. Color each point by lake name, make the points 50% transparent, and choose a color palette other than the ggplot default. 
 8. Create a boxplot of thermocline depth distributions split up by lake name on the x axis and by month as the fill color (hint: you will need to set Month as a factor). Choose a color palette other than the ggplot default, relabel axes and legend, and place the legend on the top of the graph.
 
-Do all the lakes have a similar seasonal progression of thermocline deepening? Which lakes have the deepest thermoclines, and how does this relate to their maximum depth? 
 
 ```{r}
+# 6. Calculate thermocline depths
+thermo <- plake %>%
+  group_by(lakename, year4, Month, daynum, sampledate) %>%
+  summarise(thermocline = thermo.depth(wtr = temperature_C, depths = depth, seasonal = FALSE)) 
+
+# 7. Plot thermocline by day of year, colored by lake
+ggplot(thermo, aes(x = daynum, y = thermocline, color = lakename)) +
+  geom_point(alpha = 0.5) +
+  scale_colour_brewer(palette = "Set1") 
+
+# Set Month as factor
+thermo$Month <- as.factor(thermo$Month)
+
+# 8. Boxplot of thermocline depth distributions by lake
+ggplot(thermo, aes(x = lakename, y = thermocline, color = Month)) +
+  geom_boxplot() +
+  labs(x = "Lake Name", y = "Thermocline Depth") +
+  theme(legend.position = "top") +
+  scale_colour_brewer(palette = "Set1", labels = c("April", "May", "June", "July", 
+                                                   "August", "September", "October")) 
 
 ```
+
+Do all the lakes have a similar seasonal progression of thermocline deepening? Which lakes have the deepest thermoclines, and how does this relate to their maximum depth? 
+
+The process of thermocline deepening varies by lake. Some lakes show a deepening over time from spring-fall, whereas others break that pattern. For example, Paul Lake and Tuesday Lake deepen gradually through September and then their thermoclines become more shallow in October. Central Long Lake, which is more shallow, shows a more narrow thermocline range than some of the other lakes. The lakes with the deepest thermoclines (Crampton and Peter) are likely to have a larger maximum depth. 
 

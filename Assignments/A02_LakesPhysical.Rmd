@@ -118,5 +118,5 @@ ggplot(thermo, aes(x = lakename, y = thermocline, color = Month)) +
 
 Do all the lakes have a similar seasonal progression of thermocline deepening? Which lakes have the deepest thermoclines, and how does this relate to their maximum depth? 
 
-The process of thermocline deepening varies by lake. Some lakes show a deepening over time from spring-fall, whereas others break that pattern. For example, Paul Lake and Tuesday Lake deepen gradually through September and then their thermoclines become more shallow in October. Central Long Lake, which is more shallow, shows a more narrow thermocline range than some of the other lakes. The lakes with the deepest thermoclines (Crampton and Peter) are likely to have a larger maximum depth. 
+The process of thermocline deepening varies by lake. Some lakes show a deepening over time from spring-fall, whereas others break that pattern. For example, Paul Lake and Tuesday Lake deepen gradually through September and then their thermoclines become more shallow in October. Central Long Lake, which is more shallow, shows a more narrow thermocline range than some of the other lakes. The lakes with the deepest thermoclines (Crampton and Peter) are likely to have a larger maximum depth. Deep lakes have more stable thermoclines than shallow lakes.
 

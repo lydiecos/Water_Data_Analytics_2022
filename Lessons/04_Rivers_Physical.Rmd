@@ -16,12 +16,16 @@ editor_options:
 ## Opening Discussion
 How is climate change impacting discharge in streams and rivers? What are the new and ongoing challenges faced by these impacts in watersheds?
 
+- changes in types of precipitation
+- temperature impacting evapotranspiration
+- less snow pack - more drought in summer/less spring flow
+
 ## Session Set Up
 
 ```{r, message = FALSE}
 getwd()
 
-# install.packages("lfstat")
+#install.packages("lfstat")
 
 library(tidyverse)
 library(dataRetrieval)
@@ -98,14 +102,14 @@ Let's display and model the relationship between peak annual disharge and recurr
 ggplot(EnoRecurrence, aes(x = RecurrenceInterval, y = PeakDischarge)) +
   geom_point() +
   scale_x_log10() +
-  geom_smooth(method = "lm")
+  geom_smooth(method = "lm", color = "black", se = FALSE)
 
 Eno.RImodel <- lm(data = EnoRecurrence, PeakDischarge ~ log10(RecurrenceInterval))
-summary(Eno.RImodel)
+summary(Eno.RImodel) # R2 = 91%, pretty good; less reliable further out
 
 #What is the discharge for a 100-year flood in this system? a 500-year flood?
-Eno.RImodel$coefficients[1] + Eno.RImodel$coefficients[2]*log10(100)
-Eno.RImodel$coefficients[1] + Eno.RImodel$coefficients[2]*log10(500)
+Eno.RImodel$coefficients[1] + Eno.RImodel$coefficients[2]*log10(100) # 9,826
+Eno.RImodel$coefficients[1] + Eno.RImodel$coefficients[2]*log10(500) # 12,773
 ```
 
 What if we were to build a recurrence interval model for the most recent 30 years? How would this compare to the early period recurrence interval?
@@ -130,8 +134,8 @@ summary(Eno.RImodel.Late)
 Eno.RImodel.Late$coefficients
 Eno.RImodel$coefficients
 
-Eno.RImodel.Late$coefficients[1] + Eno.RImodel.Late$coefficients[2]*log10(100)
-Eno.RImodel.Late$coefficients[1] + Eno.RImodel.Late$coefficients[2]*log10(500)
+Eno.RImodel.Late$coefficients[1] + Eno.RImodel.Late$coefficients[2]*log10(100) # 13,762
+Eno.RImodel.Late$coefficients[1] + Eno.RImodel.Late$coefficients[2]*log10(500) # 18,176
 
 Eno.RImodel$coefficients[1] + Eno.RImodel$coefficients[2]*log10(100)
 Eno.RImodel$coefficients[1] + Eno.RImodel$coefficients[2]*log10(500)
@@ -140,16 +144,18 @@ Eno.RImodel$coefficients[1] + Eno.RImodel$coefficients[2]*log10(500)
 
 What differences did you see for the recurrence intervals built under different periods of record? How would your prediction of flood events differ if you were to use these models for forecasting purposes? 
 
->
+> For the later period, the peak discharge at longer recurrence intervals is generally higher. You would expect flood events to be more extreme (or an equivalent amount of discharge to occur with greater frequency).
 
 What would you recommend for a watershed manager seeking to build the most accurate recurrence interval model for the Eno River?
 
-> 
+> Either look at the more recent interval only, or look at the full time period, but  weight the more recent period or make more conservative estimates because the findings suggest that precipitation events are becoming more extreme.
 
 
 ### Examining the effects of urbanization on discharge
 
 Salado Creek is located in San Antonio, Texas, an area that has been rapidly urbanizing over the course of the last several decades (http://worldpopulationreview.com/us-cities/san-antonio-population/#byPopulation). Is this system exhibiting stationarity?
+
+Very steep peaks - event based. Appears to have more extreme events in the last 30 years, which makes sense in an urbanizing area. 
 
 ```{r}
 # Import data
@@ -169,6 +175,8 @@ ggplot(SaladoDischarge, aes(x = Date, y = Discharge)) +
 ### Examining the effects of dam construction on recurrence intervals
 
 The stream gage in the Green River near Auburn, Washington, is located directly downstream of the Howard A. Hanson Dam. The dam was built in 1961 for flood control purposes, and the reservoir now provides water supply to the city of Tacoma. How have peak discharges changed since the construction of the dam?
+
+Peak discharges have become more steady/less extreme since the dam construction. This makes sense given that the dam was built for flood control.
 
 ```{r}
 GreenDischarge <- readNWISdv(siteNumbers = "12113000",

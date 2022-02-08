@@ -48,6 +48,8 @@ MysterySiteDischarge <- readNWISdv(siteNumbers = "03431700",
 colnames(MysterySiteDischarge)[4:5] <- c("Discharge", "Approval.Code")
 
 # 3. Build ggplot
+ggplot(MysterySiteDischarge, aes(x=Date, y=Discharge)) +
+  geom_point()
 
 ```
 
@@ -57,13 +59,30 @@ colnames(MysterySiteDischarge)[4:5] <- c("Discharge", "Approval.Code")
 5. Create a new data frame called "MysterySiteDischarge.Pattern" that has columns for Day.of.Year, median discharge for a given day of year, 75th percentile discharge for a given day of year, and 25th percentile discharge for a given day of year. Hint: the summarise function includes `quantile`, wherein you must specify `probs` as a value between 0 and 1.
 6. Create a plot of median, 75th quantile, and 25th quantile discharges against day of year. Median should be black, other lines should be gray. 
 ```{r}
+# 4. Add year and day of year columns
+MysterySiteDischarge <- MysterySiteDischarge %>%
+  mutate(MysterySiteDischarge, WaterYear = year(Date),
+         DayOfYear = yday(Date))
 
+# 5. Create summary data frame
+MysterySiteDischarge.Pattern <- MysterySiteDischarge %>%
+  group_by(DayOfYear) %>%
+  summarise(Median = median(Discharge),
+            Pct25 = quantile(Discharge, probs = 0.25),
+            Pct75 = quantile(Discharge, probs = 0.75))
+
+# 6. Plot results
+ggplot(MysterySiteDischarge.Pattern, aes(x=DayOfYear)) +
+  geom_line(aes(y=Median)) +
+  geom_line(aes(y=Pct25), color="darkgray") +
+  geom_line(aes(y=Pct75), color="darkgray") +
+  labs(x = "Day of Year", y = "Discharge")
 
 ```
 
 7. What seasonal patterns do you see? What does this tell you about precipitation patterns and climate in the watershed?
 
-> 
+> Discharge is lowest in the summer-early fall. It is highest and more variable in the winter and spring. Precipitation appears to be lowest in the warmest months. There doesn't appear to be a strong snowpack effect, so it's likely not a particularly cold climate.
 
 ## Create and analyze recurrence intervals
 
@@ -74,12 +93,45 @@ colnames(MysterySiteDischarge)[4:5] <- c("Discharge", "Approval.Code")
 10. Create a model to predict the discharge for a 100-year flood for both sets of recurrence intervals. 
 
 ```{r}
+# 8. Create two separate dataframes:
+MysterySite.Annual.30yr <- MysterySiteDischarge %>%
+  filter(WaterYear < 1994) %>%
+  group_by(WaterYear)  %>%
+  summarise(PeakDischarge = max(Discharge)) %>%
+  mutate(Rank = rank(-PeakDischarge),
+         Recurrence = (length(WaterYear) + 1)/Rank,
+         Probability = 1/Recurrence)
 
+MysterySite.Annual.Full <- MysterySiteDischarge %>%
+  group_by(WaterYear)  %>%
+  summarise(PeakDischarge = max(Discharge)) %>%
+  mutate(Rank = rank(-PeakDischarge),
+         Recurrence = (length(WaterYear) + 1)/Rank,
+         Probability = 1/Recurrence)
 
+# 9. Plots to display discharge vs. recurrence interval
+ggplot(MysterySite.Annual.30yr, aes(x=Recurrence, y=PeakDischarge)) +
+  geom_point(alpha = 0.9) +
+  geom_point(data = MysterySite.Annual.Full, aes(x=Recurrence, y=PeakDischarge), 
+             color = "darkgrey", alpha = 0.9) +
+  scale_x_log10() +
+  labs(x = "Recurrence Interval, Log10")
+
+# 10. Create models to predict, first with just 30 years of data
+MysteryModel.30yr <- lm(data = MysterySite.Annual.30yr, PeakDischarge ~ log10(Recurrence))
+summary(MysteryModel.30yr)
+MysteryModel.30yr$coefficients[1] + MysteryModel.30yr$coefficients[2]*log10(100)
+# 5759 cms
+
+# Repeat with all data
+MysteryModel.Full <- lm(data = MysterySite.Annual.Full, PeakDischarge ~ log10(Recurrence))
+summary(MysteryModel.Full)
+MysteryModel.Full$coefficients[1] + MysteryModel.Full$coefficients[2]*log10(100)
+# 4871 cms
 ```
 
 11. How did the recurrence interval plots and predictions of a 100-year flood differ among the two data frames? What does this tell you about the stationarity of discharge in this river?
 
-> 
+> With more data, the estimation of the 100-year flood discharge was lower. From looking at the graph, it appears that one extreme year in the first 30-year period may have driven the effect to be more extreme. However, the difference is not very large, suggesting that the river discharge is fairly stable over time. 
 
 

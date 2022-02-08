@@ -1,6 +1,6 @@
 ---
 title: "Assignment 3: Physical Properties of Rivers"
-author: "Student Name"
+author: "Lydie Costes"
 output: pdf_document
 geometry: margin=2.54cm
 editor_options: 
@@ -29,7 +29,25 @@ Target due date: 2022-02-08
 3. Build a ggplot of discharge over the entire period of record. 
 
 ```{r}
+# 1. Check Project working directory
+getwd()
+# Load packages
+library(tidyverse)
+library(dataRetrieval)
+library(lubridate)
+library(lfstat)
+# Set theme
+theme_set(theme_bw())
 
+# 2. Import dataframe
+MysterySiteDischarge <- readNWISdv(siteNumbers = "03431700",
+                                   parameterCd = "00060",
+                                   startDate = "1964-10-01",
+                                   endDate = "2021-09-30")
+# Rename columns
+colnames(MysterySiteDischarge)[4:5] <- c("Discharge", "Approval.Code")
+
+# 3. Build ggplot
 
 ```
 

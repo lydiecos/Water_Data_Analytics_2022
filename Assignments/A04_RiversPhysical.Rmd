@@ -18,7 +18,7 @@ This exercise accompanies the lessons in Water Data Analytics on the physical pr
 4. When you have completed the assignment, **Knit** the text and code into a single PDF file.
 5. After Knitting, check your PDF against the key and then submit your assignment completion survey at https://forms.gle/futQwtCsyYsZG9nCA
 
-Having trouble? See the assignment's answer key if you need a hint. Please try to complete the assignment without the key as much as possible - this is where the learning happens!
+Having trouble? See the assignment's an in swer key if you need a hint. Please try to complete the assignment without the key as much as possible - this is where the learning happens!
 
 Target due date: 2022-02-15
 
@@ -29,16 +29,16 @@ Target due date: 2022-02-15
 3. Add columns in the dataset for water year, baseflow, and stormflow. Feel free to use either baseflow separation function we used in class. 
 4. Calculate annual total discharge, annual baseflow, and annual proportion baseflow for the two sites.
 
-```{r}
-# 1. Verify directory, load packages, set theme
+```{r message=FALSE}
+ # 1. Verify directory, load packages, set theme
 getwd()
 
+library(EcoHydRology)
 library(tidyverse)
 library(cowplot)
 library(dataRetrieval)
 library(lubridate)
 library(lfstat)
-library(EcoHydRology)
 
 theme_set(theme_bw())
 
@@ -59,14 +59,12 @@ names(Nehalem)[4:5] <- c("Discharge", "Approval.Code")
 Bitter <- Bitter %>%
   mutate(WaterYear = water_year(Date),
          Baseflow = baseflow(Discharge),
-         Stormflow = Discharge - Baseflow, 
-         Year = year(Date))
+         Stormflow = Discharge - Baseflow)
 
 Nehalem <- Nehalem %>%
   mutate(WaterYear = water_year(Date),
          Baseflow = baseflow(Discharge),
-         Stormflow = Discharge - Baseflow,
-         Year = year(Date))
+         Stormflow = Discharge - Baseflow)
 
 # 4. Calculate annual total discharge, annual baseflow, annual proportion baseflow
 
@@ -116,7 +114,8 @@ BitPlotFlow <- ggplot(BitterAnnual, aes(x = WaterYear)) +
        y = "Annual Discharge (acft/yr)",
        title = "Annual Discharge and Baseflow of the Bitterroot River") 
 
-BitPlotProp <- ggplot(BitterAnnual, aes(x = WaterYear, y = PropBaseflow)) +
+BitPlotProp <- ggplot(BitterAnnual, aes(x = WaterYear, 
+                                        y = PropBaseflow)) +
   geom_point() +
   geom_line(aes(group=1)) +
   labs(x = "Year",
@@ -134,7 +133,8 @@ NehPlotFlow <- ggplot(NehalemAnnual, aes(x = WaterYear)) +
        y = "Annual Discharge (acft/yr)",
        title = "Annual Discharge and Baseflow of the Nehalem River") 
 
-NehPlotProp <- ggplot(NehalemAnnual, aes(x = WaterYear, y = PropBaseflow)) +
+NehPlotProp <- ggplot(NehalemAnnual, aes(x = WaterYear, 
+                                         y = PropBaseflow)) +
   geom_point() +
   geom_line(aes(group=1)) +
   labs(x = "Year",

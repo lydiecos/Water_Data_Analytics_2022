@@ -17,6 +17,12 @@ editor_options:
 
 What might cause streams to have higher peak flow following a precipitation or snowmelt event? 
 
+- Magnitude of event
+- Permeability of surrounding surfaces
+- Topography (slope)
+- Soil saturation
+- Drainage area/network position
+
 ## Session Set Up
 
 ```{r, message = FALSE}
@@ -24,7 +30,9 @@ getwd()
 
 # install.packages("EcoHydRology")
 
-library(EcoHydRology)
+library(EcoHydRology) #load first because it has conflicting functions,
+  # including overriding pipe %>% function
+  # can often use package::function to override default settings
 library(tidyverse)
 library(dataRetrieval)
 library(lubridate)
@@ -75,22 +83,28 @@ EnoDischarge$WaterYear <- as.numeric(as.character(EnoDischarge$WaterYear))
 ggplot(EnoDischarge, aes(x = Date, y = Discharge)) +
   geom_line(color = "gray") +
   geom_line(aes(y = Baseflow_lfstat)) +
-  # scale_y_log10() +
+  scale_y_log10() +
   labs(x = "Year", y = "Discharge (cfs)")
 
 # calculate baseflow with the EcoHydRology package.
 # Note: this function creates two columns which can be joined onto the original dataset.
-EnoDischarge_basesep_EcoHydro <- BaseflowSeparation(EnoDischarge$Discharge)
+EnoDischarge_basesep_EcoHydro <- BaseflowSeparation(EnoDischarge$Discharge) 
+#makes two columns: baseflow and quickflow
 
 EnoDischarge <- cbind(EnoDischarge, EnoDischarge_basesep_EcoHydro)
 
 # Let's compare the two approaches. How well do they match up, and is one biased a certain way?
 ggplot(EnoDischarge, aes(x = Baseflow_lfstat, y = bt)) +
-  geom_point(alpha = 0.1, size = 1) +
+  geom_point(alpha = 0.2, size = 1) +
   geom_abline(slope = 1, intercept = 0, color = "darkred")
 
-# How would we test that statistically? [add code here]
-
+# How would we test that statistically?
+lm_baseflow <- lm(data = EnoDischarge, bt ~ Baseflow_lfstat)
+summary(lm_baseflow)
+# Slope = 0.938
+# R2 = 0.936
+# p < 0.001
+# Could also run a paired t-test
 ```
 
 ### Seasonal and event-based cycles
@@ -118,8 +132,7 @@ ggplot(EnoDischarge_ex, aes(x = Date, y = Discharge)) +
   geom_line(aes(y = Baseflow_lfstat), color = "darkred") +
   geom_line(aes(y = bt)) +
   scale_y_log10() +
-  labs(x = "Year", y = "Discharge (cfs)")
-
+  labs(x = "Date", y = "Discharge (cfs)")
 ```
 
 ### Annual statistics
@@ -129,13 +142,12 @@ Now, let's calculate some annual flow metrics for the Eno. We can add up daily d
 ```{r}
 EnoDischarge_summary <- EnoDischarge %>%
   group_by(WaterYear) %>%
-  summarise(Discharge.acft.yr = sum(Discharge)*723.968, # what is this factor?
+  summarise(Discharge.acft.yr = sum(Discharge)*723.968, #convert qft to acft
             Baseflow.acft.yr = sum(bt)*723.968,
             Stormflow.acft.yr = sum(qft)*723.968,
             Prop.bf = Baseflow.acft.yr/Discharge.acft.yr,
             Prop.sf = Stormflow.acft.yr/Discharge.acft.yr) %>%
- mutate_if(is.numeric, round, 2) # notes here
-
+ mutate_if(is.numeric, round, 2) # round to two decimal places
 
 ggplot(EnoDischarge_summary, aes(x = WaterYear, y = Discharge.acft.yr)) +
   geom_line() +
@@ -143,8 +155,6 @@ ggplot(EnoDischarge_summary, aes(x = WaterYear, y = Discharge.acft.yr)) +
 
 ggplot(EnoDischarge_summary, aes(x = WaterYear, y = Prop.bf)) +
   geom_col()
-
-
 ```
 
 ## Arkansas River Example: Altered baseflows
@@ -158,12 +168,29 @@ Split into two groups. Each group will acquire discharge data and perform a base
 
 After you've completed your task, find a partner who analyzed the other gage. Compare the patterns in discharge and baseflow between the two sites. Work together to make a diagnosis of what could be happening over time in the Arkansas River (hint: the Coolidge site is upstream of the Dodge City site). 
 
-[Add notes here from your discussion with your partner and our discussion as a class]
+- Drought around 1980 in combination with heavy use (agricultural, etc) caused baseline water levels to drop to zero downstream. Continuing excessive water use led to being a losing flow system at Dodge City despite flow recovery upstream.
 
 This exercise is based off a case study in Zimmer et al. 2020: (Zero or not? Causes and consequences of zero-flow stream gage  readings)[https://wires.onlinelibrary.wiley.com/doi/10.1002/wat2.1436]
 
 ```{r}
+CoolDis <- readNWISdv(siteNumbers = "07137500",
+                     parameterCd = "00060", # discharge (ft3/s)
+                     startDate = "1960-10-01", 
+                     endDate = "2005-09-30")
 
+names(CoolDis)[4:5] <- c("Discharge", "Approval.Code")
+
+CoolDis <- CoolDis %>%
+  mutate(Baseflow = baseflow(Discharge), 
+         Stormflow = Discharge - Baseflow,
+         Year = year(Date), 
+         WaterYear = water_year(Date))
+CoolDis$WaterYear <- as.numeric(as.character(CoolDis$WaterYear))
+
+ggplot(CoolDis, aes(x = Date)) +
+  geom_line(aes(y = Discharge)) +
+  geom_line(aes(y = Baseflow), color = "gray") +
+  scale_y_log10() 
 
 ```
 

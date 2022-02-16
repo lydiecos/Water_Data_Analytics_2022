@@ -202,3 +202,18 @@ where P is the exceedance probability, m is the ranking of all daily mean flows 
 We focused today on recurrence intervals, which use peak flow statistics. On the other end of the discharge gradient are low flow statistics, most commonly estimated by 7Q2 and 7Q10 metrics (7-day, 2-year and 10-year annual low flow statistics). These can be used to evaluate drought conditions and are another metric for evaluating stationarity in rivers and streams. 
 
 See the USGS description of these statistics here:(Calculating Flow-Duration and Low-Flow Frequency Statistics at Streamflow-Gaging Stations)[https://pubs.usgs.gov/sir/2008/5126/section3.html]
+
+
+```{r}
+# Best way to make a legend
+ggplot(cars, aes(x = speed)) +
+  geom_line(aes(y = dist, color = "total discharge")) + 
+  scale_color_manual(values = c("total discharge" = "gray"))
+#total discharge is just a name here to reference the color
+
+#or to label by a factor column:
+ggplot(cars, aes(x = speed)) +
+  geom_line(aes(y = dist, color = lake)) + 
+  scale_color_manual(values = c("gray","green"))
+#total discharge is just a name here to reference the color
+```

@@ -15,6 +15,12 @@ editor_options:
 
 ## Opening Discussion
 What are the major water quality impairments experienced in lakes?  
+- Excessive nutrients from agriculture -> algal blooms, eutrophication
+- Sediment loading -> higher turbidity, lower clarity, lower production
+- Thermal pollution -> reduces habitat
+- Chemicals (metals, toxins)
+- Bacteria, fungae, viruses
+We'll be focusing on eutrophication this week
 
 ## Session Set Up
 
@@ -27,7 +33,7 @@ library(lubridate)
 library(LAGOSNE)
 
 theme_set(theme_classic())
-options(scipen = 100)
+options(scipen = 10) # sets number of digits to report
 
 lagosne_get(dest_folder = LAGOSNE:::lagos_path(), overwrite = TRUE)
 
@@ -71,6 +77,7 @@ For example, let's find out how many lakes are in each state. Note that LAGOSloc
 ```{r}
 # Join data frames
 LAGOSlocations <- left_join(LAGOSlocus, LAGOSstate, by = "state_zoneid")
+# if colnames are different: by = c("state_zoneid" = "ZoneID")
 
 ggplot(LAGOSlocations, aes(x = state)) + 
   geom_bar(stat = "count")
@@ -87,7 +94,7 @@ Robert Carlson's 1977 paper, "A trophic state index for lakes," established the 
 To calculate the **Trophic State Index**, three variables can be used. Note these should not be used to define trophic state but as indicators of the broader condition. Comparing these values in a given lake can give insight into the broader mechanisms at play.
 
 * *chlorophyll a concentration*, a proxy for algal (phytoplankton) biomass. Pros: direct measure of primary productivity
-* *Secchi disk transparency*, a measure of water clarity. Pros: simple and cheap. Cons: may yield a high TSI in highly colored lakes and in lakes where particulate matter is comprised of non-algal material 
+* *Secchi disk transparency*, a measure of water clarity. Pros: simple and cheap. Cons: may yield a high TSI in highly colored lakes and in lakes where particulate matter is comprised of non-algal material. White & Black disk that is lowered into the water until its colors can no longer be distinguished.  
 * *Total phosphorus (TP)*, a nutrient essential for growth of primary producers. Assumptions: phosphorus is the limiting nutrient for phytoplankton growth (this assumption often holds only for summer months)
 
 $TSI(Chl) = 10(6 - (2.04 - 0.68 ln Chl/ln 2))$
@@ -104,17 +111,16 @@ TSI values correspond to the following trophic states:
 
 ### Exploring the LAGOS nutrient data frame
 ```{r}
-dim(LAGOSnutrient)
-class(LAGOSnutrient$sampledate)
+dim(LAGOSnutrient) # huge database
+class(LAGOSnutrient$sampledate) # date is already a date!
 
 LAGOStrophic <- LAGOSnutrient %>%
-  left_join(., LAGOSlocations, by = "lagoslakeid") %>%
+  left_join(., LAGOSlocations, by = "lagoslakeid") %>% #skip naming first df bc of pipe
   select(lagoslakeid, sampledate, chla, tp, secchi, 
          gnis_name, lake_area_ha, state, state_name) %>%
   mutate(sampleyear = year(sampledate), 
          samplemonth = month(sampledate)) %>%
   drop_na(chla, tp, secchi, state)
-
 ```
 
 Let's look at observations of chl, secchi depth, and TP seasonally and over the period of study.
@@ -142,7 +148,7 @@ ggplot(LAGOStrophic, aes(x = as.factor(samplemonth), y = tp)) +
 
 What do you notice about the seasonality of these variables? If we were to characterize a lake based on the value of a given variable, how might seasonality affect our interpretations?
 
->
+> Higher, larger range, and much larger sample size of Chla in the warm months. Higher median depth of clarity in the winter, declines with increased chlorophyll in the summer. More consistent phosphorous levels.
 
 ### Calculating trophic state index
 
@@ -150,7 +156,7 @@ Let's add a TSI value calculated from each of the three variables to the data fr
 
 ```{r}
 LAGOStrophic <- LAGOStrophic %>%
-  filter(samplemonth %in% c(5:9)) %>%
+  filter(samplemonth %in% c(5:9)) %>% #filter for growing season
   mutate(TSI.chl = round(10*(6 - (2.04 - 0.68*log(chla)/log(2)))),
          TSI.secchi = round(10*(6 - (log(secchi)/log(2)))), 
          TSI.tp = round(10*(6 - (log(48/tp)/log(2)))), 
@@ -158,23 +164,23 @@ LAGOStrophic <- LAGOStrophic %>%
                                    TSI.chl >= 40 & TSI.chl < 50 ~ "Mesotrophic",
                                    TSI.chl >= 50 & TSI.chl< 70 ~ "Eutrophic",
                                    TSI.chl >= 70 ~ "Hypereutrophic"))
-
+# ^logical statement to classify trophic levels by chla score
 class(LAGOStrophic$trophic.class)
 
 LAGOStrophic$trophic.class <- factor(LAGOStrophic$trophic.class,
                                      levels = c("Oligotrophic", "Mesotrophic", "Eutrophic", "Hypereutrophic"))
 
+# We will be using this color palette later, need colormap package:
 #scales::show_col(colormap(colormap = colormaps$magma, nshades=16))
 
 # Let's save the LAGOStrophic dataset as a csv in our Data folder. 
 
-write.csv(LAGOStrophic, file = "./Data/Processed/LAGOStrophic.csv", row.names = FALSE)
+write.csv(LAGOStrophic, file = "./Data/Processed/LAGOStrophic.csv", row.names = FALSE) # Stopped here on Feb 15
 ```
 
 Now let's compare TSI values calculated from chl, secchi depth, and TP. If these were all perfectly equivalent metrics, all points should line up on the 1:1 line. 
 
 ```{r}
-
 ggplot(LAGOStrophic, aes(x = TSI.chl, y = TSI.secchi, color = samplemonth)) +
   geom_point(alpha = 0.1) + 
   scale_y_continuous(limits = c(0, 100)) +

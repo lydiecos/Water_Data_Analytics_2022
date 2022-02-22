@@ -1,6 +1,6 @@
 ---
 title: "Assignment 5: Water Quality in Lakes"
-author: "Student Name"
+author: "Lydie Costes"
 output: pdf_document
 geometry: margin=2.54cm
 editor_options: 
@@ -28,7 +28,18 @@ Target due date: 2022-02-22
 2. Load the LAGOSdata database and the trophic state index csv file we created in class.
 
 ```{r setup}
+ # 1. Verify directory, load packages, set theme
+getwd()
 
+library(tidyverse)
+library(lubridate)
+library(LAGOSNE)
+
+theme_set(theme_bw())
+
+# 2. Load data
+LAGOSdata <- lagosne_load()
+LAGOStrophic <- read.csv("../Data/Processed/LAGOStrophic.csv")
 ```
 
 ## Trophic State Index
@@ -36,6 +47,22 @@ Target due date: 2022-02-22
 3. Similar to the trophic.class column we created in class (determined from TSI.chl values), create two additional columns in the data frame that determine trophic class from TSI.secchi and TSI.tp (call these trophic.class.secchi and trophic.class.tp). 
 
 ```{r}
+# 3. Add additional columns
+LAGOStrophic <- LAGOStrophic %>%
+  mutate(trophic.class.secchi = case_when(TSI.secchi < 40 ~ "Oligotrophic",
+                                          TSI.secchi >= 40 & TSI.secchi < 50 ~ "Mesotrophic",
+                                          TSI.secchi >= 50 & TSI.secchi < 70 ~ "Eutrophic",
+                                          TSI.secchi >= 70 ~ "Hypereutrophic"),
+         trophic.class.tp = case_when(TSI.tp < 40 ~ "Oligotrophic",
+                                      TSI.tp >= 40 & TSI.tp < 50 ~ "Mesotrophic",
+                                      TSI.tp >= 50 & TSI.tp < 70 ~ "Eutrophic",
+                                      TSI.tp >= 70 ~ "Hypereutrophic"))
+
+LAGOStrophic$trophic.class.secchi <- factor(LAGOStrophic$trophic.class.secchi,
+                                     levels = c("Oligotrophic", "Mesotrophic", "Eutrophic", "Hypereutrophic"))
+
+LAGOStrophic$trophic.class.tp <- factor(LAGOStrophic$trophic.class.tp,
+                                     levels = c("Oligotrophic", "Mesotrophic", "Eutrophic", "Hypereutrophic"))
 
 ```
 
@@ -43,18 +70,54 @@ Target due date: 2022-02-22
 4. How many observations fall into the four trophic state categories for the three metrics (trophic.class, trophic.class.secchi, trophic.class.tp)? Hint: `n()` function.
 
 ```{r}
+# Chl
+LAGOStrophic %>%
+  group_by(trophic.class) %>%
+  summarise(n())
+
+# Secchi
+LAGOStrophic %>%
+  group_by(trophic.class.secchi) %>%
+  summarise(n())
+
+# Tp
+LAGOStrophic %>%
+  group_by(trophic.class.tp) %>%
+  summarise(n())
 
 ```
 
 5. What proportion of total observations are considered eutrophic or hypereutrophic according to the three different metrics (trophic.class, trophic.class.secchi, trophic.class.tp)?
 
 ```{r}
+# Chl proportions
+LAGOStrophic %>%
+  group_by(trophic.class) %>%
+  summarise(count = n()) %>%
+  mutate(proportion = count/sum(count))
+#Eutrophic = 55.6%
+#Hypereutrophic = 19.6%
 
+# Secchi
+LAGOStrophic %>%
+  group_by(trophic.class.secchi) %>%
+  summarise(count = n()) %>%
+  mutate(proportion = count/sum(count))
+#Eutrophic = 21.6%
+#Hypereutrophic = 33.1%
+
+# Tp
+LAGOStrophic %>%
+  group_by(trophic.class.tp) %>%
+  summarise(count = n()) %>%
+  mutate(proportion = count/sum(count))
+#Eutrophic = 26.7%
+#Hypereutrophic = 30.6%
 ```
 
 Which of these metrics is most conservative in its designation of eutrophic conditions? Why might this be?
 
-> 
+> The secchi metric is most conservative in the designation of the eutrophic category specific, whereas it has the highest estimate of hypereutrophic conditions. The most overall conservative is Chl, which designates just 19.6% as hypereutrophic. This could mean that overall productivity is not as high as the secchi method suggests, perhaps indicating that there is non-algal material in the lake that is amplifying the secchi estimate. Total phosphorus serves as a limiting factor.  
 
 
 ## Nutrient Concentrations
@@ -62,38 +125,67 @@ Which of these metrics is most conservative in its designation of eutrophic cond
 6. Create a data frame that includes the columns lagoslakeid, sampledate, tn, tp, state, and state_name. Mutate this data frame to include sampleyear and samplemonth columns as well. Filter the data frame for May-September. Call this data frame LAGOSNandP. 
 
 ```{r}
+# Save needed dataframes
+LAGOSnutrient <- LAGOSdata$epi_nutr
+LAGOSlocus <- LAGOSdata$locus
+LAGOSstate <- LAGOSdata$state
+LAGOSlocations <- left_join(LAGOSlocus, LAGOSstate, by = "state_zoneid")
 
+# Create dataframe with TN and TP
+LAGOSNandP <- LAGOSnutrient %>%
+  left_join(., LAGOSlocations, by = "lagoslakeid") %>%
+  select(lagoslakeid, sampledate, tn, tp, state, state_name) %>%
+  mutate(sampleyear = year(sampledate), 
+         samplemonth  = month(sampledate)) %>%
+  filter(samplemonth %in% c(5:9)) %>%
+  drop_na(tn, tp, state)
 ```
 
 7. Create two violin plots comparing TN and TP concentrations across states. Include a 50th percentile line inside the violins. Create a logged y axis and relabel axes.
 ```{r}
+ggplot(LAGOSNandP) +
+  geom_violin(aes(x=state, y=log(tn)), draw_quantiles = .5) +
+  labs(x="State", y = "Total Nitrogen (logged)")
 
+ggplot(LAGOSNandP) +
+  geom_violin(aes(x=state, y=log(tp)), draw_quantiles = .5) +
+  labs(x="State", y = "Total Phosphorus (logged)")
 ```
 
 Which states have the highest and lowest median concentrations?
 
-> TN:
+> TN: Highest: Iowa. Lowest: New Hampshire.
 
-> TP:
+> TP: Highest: Illinois. Lowest: Vermont.
 
 Which states have the largest and smallest concentration ranges?
 
-> TN: 
+> TN: Largest: Iowa. Smallest: Vermont.
 
-> TP: 
+> TP: Largest: Connecticut. Smallest: Vermont.
 
 8. Create two jitter plots comparing TN and TP concentrations across states, with samplemonth as the color. Choose a color palette other than the ggplot default.
 
 ```{r}
+ggplot(LAGOSNandP, aes(x=state, y=tn, color=factor(samplemonth))) +
+  geom_jitter(alpha = 0.5, size = 0.5) +
+  scale_y_log10() +
+  scale_color_brewer(palette="RdYlBu") +
+  labs(x="State", y="Total Nitrogen (logged)", color="Month")
 
+ggplot(LAGOSNandP, aes(x=state, y=tp, color=factor(samplemonth))) +
+  geom_jitter(alpha = 0.5, size = 0.5) +
+  scale_y_log10() +
+  scale_color_brewer(palette="RdYlBu") +
+  labs(x="State", y="Total Phosphorus (logged)", color="Month")
 ```
 
 Which states have the most samples? How might this have impacted total ranges from #7?
 
-> TN:
+> TN: Iowa, New York, Montana
 
-> TP: 
+> TP: Montana, New York, Iowa
 
-
+> More samples could definitely lead to a larger range of values because with a large number of samples, we could expect to see more variation. 
 
 

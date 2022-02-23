@@ -76,7 +76,8 @@ LAGOSjoined <- LAGOSnutrient %>%
   left_join(., LAGOSgeo) %>%
   left_join(., LAGOSlocus) %>%
   left_join(., LAGOSlulc) %>%
-  left_join(., LAGOSlimno)
+  left_join(., LAGOSlimno) %>%
+  drop_na(state_name)
 
 ggplot(LAGOSjoined, aes(x = tp, y = chla)) +
   geom_point(alpha = 0.1) +
@@ -116,7 +117,25 @@ Exercise:
 8. Create a linear model to evaluate the chlorophyll-TP relationship, with HUC 4 code as an interaction effect. Is it important to account for the HUC 4 code in the model? How might this classification impact potential nutrient management?
 
 ```{r}
+LAGOSMN <- LAGOSjoined %>%
+  left_join(., LAGOSdata$hu4) %>%
+  select(lagoslakeid, sampledate, state_name, hu4, chla, tn, tp) %>%
+  mutate(year = year(sampledate),
+         month = month(sampledate)) %>%
+  filter(month %in% c(6:9) & year > 1989 & state_name == "Minnesota") %>%
+  filter(hu4 %in% c("0401", "0701", "0702", "0703", "0704", "0902"))
 
+ggplot(LAGOSMN, aes(x=chla, y=tp, color=hu4)) +
+  geom_point() +
+  geom_smooth(method = "lm", se = FALSE, color="black") +
+  theme_bw() +
+  facet_wrap(vars(hu4)) +
+  labs(x="chlorophyll", y="Total Phosphorus", color="HUC 4")
+
+lmMN <- lm(data=LAGOSMN, log10(tp) ~ log10(chla) * hu4)
+summary(lmMN)
+par(mfrow = c(2,2))
+plot(lmMN)
 
 ```
 

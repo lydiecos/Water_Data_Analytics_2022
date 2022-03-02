@@ -156,10 +156,15 @@ LAGOScovariates <- LAGOSjoined %>%
 LAGOScorr <- cor(LAGOScovariates, use = "complete.obs")
 
 # plot correlation matrix.
+par(mfrow = c(1,1))
 corrplot(LAGOScorr)
 
-# customize.
-corrplot(LAGOScorr, type = "upper", diag = FALSE, tl.cex = 0.8, tl.col = "black")
+# customize: hide duplicates and diagonal
+corrplot(LAGOScorr, type = "upper", diag = FALSE, tl.cex = 0.8, tl.col = "black") 
 
 ```
 
+Conclusions:
+- doc = dissolved organic carbon -> lower concentration with deeper lake
+- positive relationship between area, depth, percent forest, slope
+- pct row crops is positively associated with chla

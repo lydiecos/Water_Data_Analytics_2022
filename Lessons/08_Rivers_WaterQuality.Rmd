@@ -78,7 +78,7 @@ unique(NeuseWQ$CharacteristicName)
 NeuseFlow <- readNWISdv(siteNumbers = "02089500",
                      parameterCd = "00060", # discharge (cfs)
                      startDate = "1976-01-01",
-                     endDate = "")
+                     endDate = "") # grab flow
 
 NeuseWQ_processed <- NeuseWQ %>%
   select(MonitoringLocationIdentifier, ActivityStartDate, HydrologicCondition, 
@@ -92,23 +92,27 @@ NeuseWQ_processed <- NeuseWQ %>%
   select(-CharacteristicName) %>%
   pivot_wider(names_from = "Variable", values_from = "ResultMeasureValue")
 
+# Only include time span that is relevant for water quality variables
 NeuseFlow_processed <- NeuseFlow %>%
   select(ActivityStartDate = Date, Flow_cfs = X_00060_00003) %>%
   filter(ActivityStartDate >= min(NeuseWQ_processed$ActivityStartDate) & 
            ActivityStartDate <= max(NeuseWQ_processed$ActivityStartDate))
 
+# Combine water quality and flow data
 NeuseWQFlow_processed <- NeuseWQ_processed %>%
   full_join(., NeuseFlow_processed) %>%
   mutate(Year = year(ActivityStartDate), 
          Month = month(ActivityStartDate), 
          DOY = yday(ActivityStartDate),)
 
+# collapse to variable & value columns
 NeuseWQFlow_long <- NeuseWQFlow_processed %>%
   pivot_longer(cols = c("FecalColiform_cfu.100mL", "FecalStrep_cfu.100mL", "SpC_uS.cm",
                         "Sodium_mg.L", "Magnesium_mg.L", "Calcium_mg.L", "Flow_cfs"),
                names_to = "Variable", values_to = "Value") %>%
   drop_na(Value)
 
+# summarise quantiles
 NeuseFlow_summary <- NeuseWQFlow_processed %>%
   group_by(DOY) %>%
   summarise(median_Flow_cfs = median(Flow_cfs, na.rm = TRUE),
@@ -147,7 +151,7 @@ What is the relationship between flow and the water quality indicators?
 ggplot(NeuseFlow_summary, aes(x = DOY)) +
   geom_line(aes(y = median_Flow_cfs)) +
   geom_ribbon(aes(ymin = p25_Flow_cfs, ymax = p75_Flow_cfs), fill = "gray", alpha = 0.2) +
-  #geom_point(data = NeuseWQFlow_processed, aes(y = FecalColiform_cfu.100mL)) +
+  geom_point(data = NeuseWQFlow_processed, aes(y = FecalColiform_cfu.100mL)) +
   #geom_point(data = NeuseWQFlow_processed, aes(y = SpC_uS.cm)) +
   scale_y_log10() +
   labs(x = "Day of Year", y = "Flow (cfs)")
@@ -160,6 +164,8 @@ ggplot(NeuseWQFlow_processed, aes(x = Flow_cfs, y = FecalColiform_cfu.100mL)) +
   labs(x = "Flow (cfs)", y = "Fecal Coliform (cfu/100 mL)")
 
 summary(lm(data = NeuseWQFlow_processed, log10(FecalColiform_cfu.100mL) ~ log10(Flow_cfs)))
+# significant negative relationship, but explains very little of the data
+plot(lm(data = NeuseWQFlow_processed, log10(FecalColiform_cfu.100mL) ~ log10(Flow_cfs)))
 
 ggplot(NeuseWQFlow_processed, aes(x = Flow_cfs, y = SpC_uS.cm)) +
   geom_point() +
@@ -182,7 +188,14 @@ Exercise:
 3. How do fecal coliform and specific conductivity vary as a function of hydrologic condition?
 
 ```{r}
-
+ggplot(NeuseWQFlow_processed, aes(x=HydrologicCondition, 
+                                  y=FecalColiform_cfu.100mL,
+                                  color=HydrologicCondition)) +
+  geom_boxplot(outlier.shape=NA) +
+  geom_jitter(alpha=.5) +
+  scale_y_log10() +
+  theme(legend.position="none", axis.text.x = element_text(angle = 45, vjust=.7))
+  
 
 ```
 

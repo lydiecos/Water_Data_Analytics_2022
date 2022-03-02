@@ -1,6 +1,6 @@
 ---
 title: "Assignment 6: Water Quality in Lakes"
-author: "Student Name"
+author: "Lydie Costes"
 output: pdf_document
 geometry: margin=2.54cm
 editor_options: 
@@ -31,7 +31,14 @@ Target due date: 2022-03-01
 [Water Quality Portal Web Services Guide](https://www.waterqualitydata.us/webservices_documentation/)
 
 ```{r setup}
+# 1. Check directory, load packages, set theme
+getwd()
+library(lubridate)
+library(tidyverse)
+library(dataRetrieval)
+theme_set(theme_bw())
 
+# 2. Load data
 NCdata <- readWQPdata(statecode = "North Carolina", 
                       siteType = "Lake, Reservoir, Impoundment", 
                       sampleMedia = c("Water", "water"), 
@@ -60,22 +67,14 @@ General data processing and quality assurance considerations:
 
 
 3. Note the wrangling steps outlined here. Then, set ActivityStartDate as date.
-
-4. Then, add a new pipe that does the following: 
-
-* Select the columns OrganizationIdentifier, OrganizationFormalName, ActivityStartDate, 
-ActivityConductingOrganizationText, MonitoringLocationIdentifier, Depth, ResultMeasureValue, Variable
-* Group by those same variables except ResultMeasureValue, then `summarise` the mean of ResultMeasureValue. This will generate a single row for each location-date-depth sample. 
-* Pivot your dataset into wide format. Hint: `pivot_wider` by Variable and ResultMeasureValue. 
-* Add in month and year as new columns. Filter the dataset for just months May-October.
-* Filter the dataset for just depths 1 m or shallower.
-
-5. Create a graph visualizing the chlorophyll-TP stressor-response relationship. Add a line of best fit for the linear regression, and adjust axis scales and labels as needed. 
-
   
 ```{r}
+# 3. Set ActivityStartDate as date
+NCdata$ActivityStartDate <- as.Date(NCdata$ActivityStartDate)
 
 # Look into what forms and units phosphorus and chlorophyll have. 
+#   Phosphorus = Total or Dissolved; mg/l as P
+#   Chlorophyll = NA; ug/l
 # Note that chlorophyll is always suspended, so the form isn't crucial.
 # Note that Phosphorus is in dissolved and total forms. We are interested in total.
 # Note that chlorophyll is in ug/L and phosphorus is in mg/L. In this case, we will assume NAs are consistent with the commonly used unit.
@@ -106,10 +105,44 @@ NCdata_processed <- NCdata %>%
                                           DetectionQuantitationLimitMeasure.MeasureValue, 
                                         TRUE ~ ResultMeasureValue)) %>%
   drop_na(Variable, ResultMeasureValue, Depth_m)
-  
 
 ```
   
+4. Then, add a new pipe that does the following: 
+
+* Select the columns OrganizationIdentifier, OrganizationFormalName, ActivityStartDate, 
+ActivityConductingOrganizationText, MonitoringLocationIdentifier, Depth, ResultMeasureValue, Variable
+* Group by those same variables except ResultMeasureValue, then `summarise` the mean of ResultMeasureValue. This will generate a single row for each location-date-depth sample. 
+* Pivot your dataset into wide format. Hint: `pivot_wider` by Variable and ResultMeasureValue. 
+* Add in month and year as new columns. Filter the dataset for just months May-October.
+* Filter the dataset for just depths 1 m or shallower.
+
+5. Create a graph visualizing the chlorophyll-TP stressor-response relationship. Add a line of best fit for the linear regression, and adjust axis scales and labels as needed. 
+  
+```{r}
+# 4. Add new pipe
+NCdata_processed_wider <- NCdata_processed %>%
+  select(OrganizationIdentifier, OrganizationFormalName, ActivityStartDate,
+         ActivityConductingOrganizationText, MonitoringLocationIdentifier, 
+         Depth_m, ResultMeasureValue, Variable) %>%
+  group_by(OrganizationIdentifier, OrganizationFormalName, ActivityStartDate,
+           ActivityConductingOrganizationText, MonitoringLocationIdentifier,
+           Depth_m, Variable) %>%
+  summarise(mean = mean(ResultMeasureValue)) %>%
+  pivot_wider(names_from = Variable, values_from = mean) %>%
+  mutate(month = month(ActivityStartDate),
+         year = year(ActivityStartDate)) %>%
+  filter(month %in% c(5:9) & Depth_m <= 1)
+
+# 5. Create graph
+ggplot(NCdata_processed_wider, aes(x=TP_mgL, y=Chla_ugL)) +
+  geom_point() +
+  geom_smooth(method="lm", color="red", se=FALSE) +
+  xlim(NA, 0.6) +
+  ylim(NA, 250) +
+  labs(x="Total Phosphorus (mg/L)", y="Chlorophyll A (ug/L)")
+
+```
 6. How might you expect this stressor-response relationship to change (or not) across the Mountains, Piedmont, and Coastal Plain regions of the state? How might you anticipate natural lakes might behave differently than reservoirs?
 
-> 
+> Because the mountains experience more climatic variability than the coastal plain, I would guess that we might see a flatter regression line. In the warm months, there would be a strong relationship between P and Chl, whereas since the mountains have more temps below freezing, we would expect the Chl levels to drop while the P levels might remain more steady. I'm not sure how to answer the natural lake/reservoir question. Perhaps reservoirs have higher turbidity from increased erosion and sediment load? That could result in reduced algal levels if there isn't enough light penetration to allow for photosynthesis. 

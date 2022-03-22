@@ -67,18 +67,20 @@ names(NeuseFlow)[4:5] <- c("Discharge", "Approval.Code")
 # Plot discharge over time
 ggplot(NeuseFlow, aes(x = Date, y = Discharge)) +
   geom_line() +
-  labs(x = "", y = "Discharge (cfs)")
+  scale_y_log10() +
+  labs(x = "", y = "Discharge (cfs)") +
+  geom_smooth(method = "lm", se = FALSE)
 
 
 ```
 
 How would you characterize the time series of discharge and conductivity at this location? Do you see a linear trend over time? What factors might you need to take into account to be able to detect a trend or forecast future conditions?
 
->
+> Very peaky and seasonal. Slight linear trend upward over time but not a great candidate for linear trend analysis. Could remove seasonality to detect trend. 
 
 Are there situations where it would be appropriate to use a linear regression to model a time series? If so, what is an example?
 
->
+> 
 
 
 ## Decomposing a time series dataset
@@ -192,6 +194,15 @@ NeuseCond_monthly$Conductivity <- linearinterpolation$y
 3. Analyze the decomposed time series. Is there distinct seasonality? How does the magnitude of seasonality compare to the trend and random components of the time series? What are some caveats that need to be considered for the gap between October 2001 through February 2007?
 
 ```{r}
+# Create time series
+NeuseCond_ts <- ts(NeuseCond_monthly$Conductivity, frequency = 12)
+
+# Decompose time series
+NeuseCond_Decomposed <- stl(NeuseCond_ts, s.window = "periodic")
+
+# Plot time series
+plot(NeuseCond_Decomposed)
+# Yes, there is seasonality but it does not substantially impact the trend. The seasonal component is an order of magnitude smaller than the overall variability. 
 
 ```
 

@@ -1,6 +1,6 @@
 ---
 title: "Assignment 7: Water Quality in Rivers"
-author: "Student Name"
+author: "Lydie Costes"
 output: pdf_document
 geometry: margin=2.54cm
 editor_options: 
@@ -28,7 +28,15 @@ Target due date: 2022-03-22
 
 
 ```{r}
+# 1. Verify working directory, load packages, set theme
+getwd()
 
+library(tidyverse)
+library(lubridate)
+library(cowplot)
+library(dataRetrieval)
+
+theme_set(theme_bw())
 ```
 
 ## Hypoxia
@@ -39,36 +47,63 @@ This assignment will look at another measure of water quality - oxygen concentra
 2. Import the oxygen water quality data from New Hope Creek at Blands (using `readWQPqw()`, site code `USGS-02097314`, parameter code `00300`). Make a data frame called `NewHopeDO` that includes only the Date and dissolved oxygen concentration values. Rename the column names "Date" and "DO_mgL".
 
 ```{r}
+# 2. Import data and select date and DO
+NewHope <- readWQPqw(siteNumbers = "USGS-02097314",
+                       parameterCd = "00300")
 
+NewHopeDO <- NewHope %>%
+  select(Date = ActivityStartDate,
+         DO_mgL = ResultMeasureValue)
 
 ```
 
 3. Create a ggplot of oxygen concentrations over time. Include a horizonal line at 2 mg/l to show the hypoxia cutoff. 
 
 ```{r}
-
+# 3. Create ggplot of O2 concentrations over time
+ggplot(NewHopeDO, aes(x = Date, y = DO_mgL)) +
+  geom_point() +
+  geom_line() +
+  geom_hline(yintercept = 2) +
+  labs(y = "Dissolved Oxygen Concentration (mg/L)")
 
 ```
 
 4. What do you notice about the frequency of hypoxia over time?
 
-> 
+> It stopped occuring by the 90's, or perhaps even by the mid-1980's, but there is a gap in data. The leveling of oxygen concentrations beginning in the 90's is rather dramatic compared with the early 1980's.
 
 ## Nutrients
 
-5. Often times hypoxia is associated with high nutrient concentrations, because abundant nutrients promote primary production which in turn increases respiration and depletes oxygen concentrations in the water (remember how oxygen concentrations were very low in the hypolimnion from the Physical Properties of Lakes week). Create a new data frame, called `NewHopeTP` with total phosphorus (parameter code `00665`) data from the same site Your data frame should have 2 columns: "Date" and "TP_mgL".
+5. Often times hypoxia is associated with high nutrient concentrations, because abundant nutrients promote primary production which in turn increases respiration and depletes oxygen concentrations in the water (remember how oxygen concentrations were very low in the hypolimnion from the Physical Properties of Lakes week). Create a new data frame, called `NewHopeTP` with total phosphorus (parameter code `00665`) data from the same site. Your data frame should have 2 columns: "Date" and "TP_mgL".
 
 
 ```{r}
+# 5. Import data and select date and TP
+NewHope <- readWQPqw(siteNumbers = "USGS-02097314",
+                       parameterCd = "00665")
 
+NewHopeTP <- NewHope %>%
+  select(Date = ActivityStartDate,
+         TP_mgL = ResultMeasureValue)
 
 ```
 
 6.  Create two ggplots stacked with `plot_grid` that show DO and TP concentrations over time.
 
 ```{r}
+# 6. Plot DO and TP
+do_plot <- ggplot(NewHopeDO, aes(x=Date, y=DO_mgL)) +
+  geom_line() +
+  geom_point() +
+  labs(y = "Dissolved Oxygen (mg/L)")
 
+tp_plot <- ggplot(NewHopeTP, aes(x=Date, y=TP_mgL)) +
+  geom_line() +
+  geom_point() +
+  labs(y = "Total Phosphorus (mg/L)")
 
+plot_grid(do_plot, tp_plot, nrow = 2)
 
 ```
 

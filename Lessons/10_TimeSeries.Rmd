@@ -55,11 +55,11 @@ In general, detecting a monotonic trend requires a long sequence of data with fe
 
 Adjusting the data may be necessary to fulfill the assumptions of a trend test. These adjustments include **aggregation**, **subsampling**, and **interpolation**. What do each of these mean, and why might we want to use them?
 
-> aggregation: 
+> aggregation: Take a certain time step and go to a broader time step to smooth across gaps in data. May assume that there is no temporal autocorrelation (but test will run regardless).
 
-> subsampling: 
+> subsampling: Use part of the data to build a model and use a different part to test the model. Or, looking at a different time frequency (e.g., have daily data but only look at datapoints once every 14 days)
 
-> interpolation: 
+> interpolation: Use surrounding data to fill in the gaps. 
 
 Specific tests for monotonic trend analysis are listed below, with assumptions and tips: 
 
@@ -119,7 +119,7 @@ NeuseFlow_monthly <- NeuseFlow %>%
   mutate(Year = year(Date),
          Month = month(Date)) %>%
   group_by(Year, Month) %>%
-  summarise(Discharge_acftmo = sum(Discharge)*1.98347)
+  summarise(Discharge_acftmo = sum(Discharge)*1.98347) # change units
 
 
 ```
@@ -128,14 +128,17 @@ Let's visualize the seasonality of these two datasets. Add some editing to impro
 
 ```{r}
 Condplot <-
-ggplot(NeuseCond_monthly, aes(x = as.factor(Month), y = Conductivity)) +
-  geom_boxplot()
+ggplot(subset(NeuseCond_monthly, !is.na(Month)), aes(x = as.factor(Month), y = Conductivity)) +
+  geom_boxplot() +
+  labs(x = "Month", y = expression("Conductivity ("*mu*"/cm)")) +
+  theme(axis.text.x = element_blank())
 
 Flowplot <-
 ggplot(NeuseFlow_monthly, aes(x = as.factor(Month), y = Discharge_acftmo)) +
-  geom_boxplot()
+  geom_boxplot() +
+  labs(x = "Month", y = "Discharge (acre ft/mo)")
 
-plot_grid(Condplot, Flowplot, ncol = 1)
+plot_grid(Condplot, Flowplot, ncol = 1, align = "hv")
 ```
 
 
@@ -150,13 +153,15 @@ NeuseCond_trend <- smk.test(NeuseCond_timeseries)
 
 # Inspect results
 NeuseCond_trend
+# S-score shows the direction and strength of the trend over time
+# For example, the S for January is the combination of Januarys across all years. An S-score close to zero means no change over time.
 summary(NeuseCond_trend)
 
 ```
 
 What would we conclude based on these findings? 
 
->
+> The Neuse River is showing signs of salinization over time (high positive z-score, tiny p-value). This trend is seen in the first half of the year, late winter through early summer.
  
 If a significant trend was present, we could compute a **Sen's Slope** to quantify that trend (`sens.slope` function in the trend package).
 
@@ -166,12 +171,18 @@ Exercise: run the same test for discharge.
 NeuseFlow_timeseries <- ts(NeuseFlow_monthly$Discharge_acftmo, frequency = 12,
                            start = c(1976, 1, 1), end = c(2021, 12, 1))
 
+# Run SMK test
+NeuseFlow_trend <- smk.test(NeuseFlow_timeseries)
+
+# Inspect results
+NeuseFlow_trend
+summary(NeuseFlow_trend)
 
 ```
 
 What would we conclude based on these findings? 
 
->
+> The Neuse River is showing an increase in discharge over time, though not as strong of an effect (p = 0.0027). Increase is occuring during the fall months. The monthly effects are different from the salinization - higher flow will dilute salinity. 
  
 ## Autoregressive and Moving Average Models (ARMA)
 
@@ -188,6 +199,7 @@ ARMA models require stationary data. This means that there is no monotonic trend
 ```{r}
 
 adf.test(NeuseFlow_timeseries, alternative = "stationary")
+# The data are stationary (not changing) over time
 
 ```
 
@@ -196,7 +208,10 @@ Let's inspect the ACF and PACF plots. Notice the ACF plot has repeating positive
 ```{r}
 
 acf(NeuseFlow_timeseries)
+# Given one month of data, how auto-correlated will the data be with following months?
+# Point is that autocorrelation decays over time and that we can see some seasonality
 pacf(NeuseFlow_timeseries)
+# Decays faster and less seasonality
 
 ```
 

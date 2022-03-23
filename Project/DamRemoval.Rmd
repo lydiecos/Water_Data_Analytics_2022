@@ -39,7 +39,6 @@ KennFlow <- readNWISdv(siteNumbers = "01049500",
 
 
 
-
 KennWQ <- readWQPqw(siteNumbers = "USGS-01049500", # Cobbosseecontee Stream at Gardiner, Maine
                      parameterCd = c("00915", # calcium, filtered mg/L
                                      "00925", # magnesium, filtered mg/L
@@ -58,6 +57,15 @@ KennWQ <- readWQPqw(siteNumbers = "USGS-01049500", # Cobbosseecontee Stream at G
 
 PenParams <- whatNWISdata(siteNumbers = "01036390")
 # This looks like a better candidate - 253 rows)
+
+PenFlow <- readNWISdv(siteNumbers = "01036390",
+                    parameterCd = "00060",
+                     startDate = "",
+                     endDate = "")
+names(PenFlow)[4:5] <- c("Discharge", "Approval.Code")
+ggplot(PenFlow, aes(x = Date, y  = Discharge)) +
+  geom_line()
+
 ```
 
 ## Including Plots

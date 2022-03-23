@@ -71,7 +71,7 @@ ggplot(NewHopeDO, aes(x = Date, y = DO_mgL)) +
 
 4. What do you notice about the frequency of hypoxia over time?
 
-> It stopped occuring by the 90's, or perhaps even by the mid-1980's, but there is a gap in data. The leveling of oxygen concentrations beginning in the 90's is rather dramatic compared with the early 1980's.
+> It stopped occurring by the 90's, or perhaps even by the mid-1980's, but there is a gap in data. The leveling of oxygen concentrations beginning in the 90's is rather dramatic compared with the early 1980's.
 
 ## Nutrients
 
@@ -109,24 +109,39 @@ plot_grid(do_plot, tp_plot, nrow = 2)
 
 7. What do these plots tell you about nutrient concentrations over time? How might nutrient concentrations relate to your previous plot of hypoxia events?
 
-> 
+> These plots suggest that nutrient levels were higher in the 1980's, when hypoxia occurred. Phosphorus levels dropped dramatically since the 1990's, during which hypoxia events stopped occurring. Because phosphorus is often a limiting factor for algal growth, the lower P levels may be preventing surges in algal growth that could suck up all the oxygen.   
 
 ## Discharge and Dissolved Oxygen
 
 8. Turbulent flow in rivers mixes oxygen into the water column. As discharge decreases, water moves slower, and oxygen diffuses slower into the water from the atmosphere. Download and reformat the daily discharge data for New Hope Creek (function `readNWISdv()`, site `02097314`, parameter `00060`). 
 
 ```{r}
+# 8. Download and reformat discharge data
+NewHopeFlow <- readNWISdv(site = "02097314",
+                          parameterCd = "00060")
 
+names(NewHopeFlow)[4:5] <- c("Discharge", "Approval.Code")
 
 ```
 
 9.  Create two ggplots stacked with `plot_grid` that show DO concentrations and discharge over time, for the two years we observed hypoxia (1983 and 1984).
 
 ```{r}
+plot_do <- ggplot(NewHopeDO, aes(x = Date, y = DO_mgL)) +
+  geom_line() +
+  geom_point() +
+  labs(x = "", y = "Dissolved Oxygen (mg/L)") +
+  scale_x_date(limits = as.Date(c("1983-01-01", "1984-12-31"))) +
+  theme(axis.text.x = element_blank())
 
+plot_fl <- ggplot(NewHopeFlow, aes(x = Date, y = Discharge)) +
+  geom_line() +
+  labs(y = "Discharge  (cfs)") +
+  scale_x_date(limits = as.Date(c("1983-01-01", "1984-12-31"))) 
 
+plot_grid(plot_do, plot_fl, ncol = 1, align = "hv")
 ```
 
 10. Do hypoxic events happen in the wet or the dry season? Why might that be?
 
-> 
+> Hypoxic events tend to happen in the dry season. Turbulent waters after a rainstorm could lead to more mixing of the water that could increase the amount of dissolved oxygen. If water levels and overall volume of water are lower, the water may be more turbid, allowing for more photosynthesis that uses up the oxygen present in the water. 

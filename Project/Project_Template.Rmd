@@ -5,9 +5,9 @@ output:
     fig_caption: yes
     number_sections: yes
 geometry: margin=2.54cm
-title: "Insert title of project here"
+title: "Impacts of Dam Removal on the Neuse River"
 subtitle: "Web address for GitHub repository"
-author: "Name"
+author: "Lydie Costes"
 fontsize: 12pt
 mainfont: Times New Roman
 

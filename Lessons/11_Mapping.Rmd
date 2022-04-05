@@ -94,6 +94,7 @@ ggplot(states.subset) +
 
 ## Data wrangling
 ```{r}
+# Check out available LAGOS datasets
 help.search("datasets", package = "LAGOSNE")
 
 # load LAGOSNE data frames
@@ -119,8 +120,10 @@ Let's create a new data frame of average Secchi depth for each lake. Notice that
 
 ```{r}
 secchi.summary <- LAGOScombined %>%
+  filter(sampledate > "2001-12-31") %>%
   group_by(lagoslakeid) %>%
   summarise(secchi.mean = mean(secchi),
+            secchi.min = min(secchi),
             area = mean(lake_area_ha),
             depth = mean(maxdepth),
             lat = mean(nhd_lat), 
@@ -141,7 +144,7 @@ secchi.spatial <- st_as_sf(secchi.summary, coords = c("long", "lat"), crs = 4326
 ggplot() +
   geom_sf(data = states.subset, fill = "white") +
   geom_sf(data = secchi.spatial, aes(color = secchi.mean), 
-          alpha = 0.5, size = 1) +
+          alpha = 0.5, size = 1, direction = -1) +
   scale_color_viridis_c(trans = "log10", end = 0.8) +
   labs(color = "Average Secchi Depth (m)") +
   theme(legend.position = "top")
@@ -154,25 +157,63 @@ Your turn! Notice that Maine has a large number of lakes with secchi depth measu
 1. Filter the states and secchi depth datasets so that they contain Maine only. For the secchi depth dataset, create a summary dataset with just the mean secchi depth. 
 
 ```{r}
+# 1a. Filter datasets
+maine.state <- states.subset %>%
+  filter(ID == "maine")
 
+maine.secchi <- LAGOScombined %>%
+  filter(state == "ME")
+  
+# 1b. Create summary
+maine.summary <- maine.secchi %>%
+  group_by(lagoslakeid) %>%
+  summarise(secchi.mean = mean(secchi),
+            secchi.min = min(secchi),
+            area = mean(lake_area_ha),
+            depth = mean(maxdepth),
+            lat = mean(nhd_lat), 
+            long = mean(nhd_long)) %>%
+  drop_na()
+  
 ```
 
 2. Create a plot of mean secchi depth for lakes in Maine, with mean secchi depth designated as color and the lake area as the size of the dot. Remember that you are using size in the aesthetics and should remove the size = 1 from the other part of the code. Adjust the transparency of points as needed.
 
 ```{r}
+# 2.
+maine.spatial <- st_as_sf(maine.summary, coords = c("long", "lat"), crs = 4326)
+
+plot.secchi.area <- ggplot() +
+  geom_sf(data = maine.state) +
+  geom_sf(data = maine.spatial, aes(color = secchi.mean, 
+                                    size = area, alpha = 0.5)) +
+  scale_color_viridis_c(trans = "log10", end = 0.8, direction = -1) +
+  labs(color = "Average Secchi Depth (m)", alpha = "") +
+  theme(legend.position = "top")
+
+plot.secchi.area
 
 ```
 
 3. Create a second plot, but this time use maximum depth of the lake as the size of the dot. 
 
 ```{r}
+plot.secchi.depth <- ggplot() +
+  geom_sf(data = maine.state) +
+  geom_sf(data = maine.spatial, aes(color = secchi.mean, 
+                                    size = depth, alpha = 0.5)) +
+  scale_color_viridis_c(trans = "log10", end = 0.8, direction = -1) +
+  labs(color = "Average Secchi Depth (m)", alpha = "") +
+  theme(legend.position = "top")
+
+plot.secchi.depth
 
 ```
 
 4. Plot these maps in the same plot with the `plot_grid` function. Don't worry about adjusting the legends (if you have extra time this would be a good bonus task).
 
 ```{r}
-
+plot_grid(plot.secchi.area, plot.secchi.depth)
 ```
 
 5. What relationships do you see between secchi depth, lake area, and lake depth? Which of the two lake variables seems to be a stronger determinant of secchi depth? (you can make a scatterplot or run a regression to test this if time remains)

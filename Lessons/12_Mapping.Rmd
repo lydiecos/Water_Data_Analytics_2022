@@ -70,7 +70,7 @@ NLDI <- navigate_nldi(list(featureSource = "comid", featureID = start_comid),
                           distance_km = 1000)
 
 # Extract watershed and flowpath information
-subset_file <- tempfile(fileext = ".gpkg")
+subset_file <- tempfile(fileext = ".gpkg") # required step to run the subset_nhdplus function
 subset <- subset_nhdplus(comids = as.integer(NLDI$UT$nhdplus_comid),
                          output_file = subset_file,
                          nhdplus_data = "download", 
@@ -87,7 +87,7 @@ class(catchment)
 class(waterbody)
 
 # find gages near watershed
-gages <- get_nwis(AOI = catchment)
+gages <- get_nwis(AOI = catchment) # AOI = Area of Interest
 class(gages)
 
 # find gages only within watershed
